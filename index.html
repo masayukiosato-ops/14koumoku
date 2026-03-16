@@ -1,0 +1,1104 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ヘンダーソン アセスメント支援ツール</title>
+<style>
+/* AI Settings Panel */
+.ai-settings-bar {
+  background: #0d2218;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+  padding: 10px 32px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.ai-settings-bar label {
+  font-size: 12px;
+  color: rgba(255,255,255,0.6);
+  white-space: nowrap;
+}
+.ai-select {
+  padding: 6px 12px;
+  background: #1a4030;
+  border: 1px solid rgba(255,255,255,0.25);
+  border-radius: 8px;
+  color: #fff;
+  font-family: 'Noto Sans JP', sans-serif;
+  font-size: 12px;
+  cursor: pointer;
+  appearance: auto;
+}
+.ai-select option {
+  background: #1a3a2e;
+  color: #fff;
+}
+.ai-select:focus { outline: none; border-color: rgba(255,255,255,0.5); }
+.ai-key-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 200px;
+}
+.ai-key-input {
+  flex: 1;
+  padding: 6px 10px;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 8px;
+  color: #fff;
+  font-family: 'Noto Sans JP', sans-serif;
+  font-size: 12px;
+}
+.ai-key-input::placeholder { color: rgba(255,255,255,0.3); }
+.ai-key-input:focus { outline: none; border-color: rgba(255,255,255,0.5); }
+.ai-key-toggle {
+  padding: 5px 10px;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 8px;
+  color: rgba(255,255,255,0.6);
+  font-size: 11px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.ai-key-toggle:hover { background: rgba(255,255,255,0.15); }
+.ai-status {
+  font-size: 11px;
+  color: rgba(255,255,255,0.5);
+  white-space: nowrap;
+}
+.ai-status.ok { color: #52b89a; }
+.ai-status.error { color: #f08070; }
+.ai-test-btn {
+  padding: 6px 14px;
+  background: rgba(255,255,255,0.12);
+  border: 1px solid rgba(255,255,255,0.3);
+  border-radius: 8px;
+  color: #fff;
+  font-family: "Noto Sans JP", sans-serif;
+  font-size: 12px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s;
+}
+.ai-test-btn:hover { background: rgba(255,255,255,0.22); }
+.ai-test-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+</style>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;600&family=Noto+Sans+JP:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #f5f3ef;
+  --surface: #ffffff;
+  --surface2: #f9f8f5;
+  --border: #e2ddd6;
+  --border2: #cec9bf;
+  --text: #1c1a17;
+  --text2: #5a5650;
+  --text3: #9a948c;
+  --teal: #0d7a5f;
+  --teal-light: #e6f5f0;
+  --teal-mid: #52b89a;
+  --amber: #b5640a;
+  --amber-light: #fef3e2;
+  --red: #b53020;
+  --red-light: #fdecea;
+  --green: #1a6b3a;
+  --green-light: #e8f5ee;
+  --gray-light: #f0ede8;
+  --radius: 10px;
+  --radius-lg: 16px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.06);
+  --shadow-lg: 0 8px 32px rgba(0,0,0,0.10);
+}
+
+body {
+  font-family: 'Noto Sans JP', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+
+/* ── Results section label ── */
+.results-section-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text3);
+  margin-bottom: 10px;
+}
+
+/* ── Compact OK items list ── */
+.ok-items-list {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow);
+}
+.ok-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--border);
+  border-left: 3px solid transparent;
+  flex-wrap: wrap;
+}
+.ok-item:last-child { border-bottom: none; }
+.ok-item.status-fulfilled { border-left-color: #2a9a5c; }
+.ok-item.status-unknown   { border-left-color: #cec9bf; }
+.ok-num {
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  background: var(--gray-light);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 700;
+  color: var(--text3);
+  flex-shrink: 0;
+}
+.ok-item.status-fulfilled .ok-num { background: var(--green-light); color: var(--green); }
+.ok-title {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text);
+  flex: 1;
+  min-width: 120px;
+}
+.ok-status-label { flex-shrink: 0; font-size: 11px; }
+.ok-summary {
+  font-size: 12px;
+  color: var(--text3);
+  flex: 2;
+  min-width: 160px;
+}
+
+/* ── Header ── */
+.app-header {
+  background: var(--navy, #1e2d3d);
+  background: linear-gradient(135deg, #1a3a2e 0%, #0d2218 100%);
+  color: #fff;
+  padding: 28px 32px 24px;
+  border-bottom: 3px solid var(--teal);
+}
+.app-header h1 {
+  font-family: 'Noto Serif JP', serif;
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  margin-bottom: 4px;
+}
+.app-header p {
+  font-size: 13px;
+  color: rgba(255,255,255,0.65);
+  font-weight: 300;
+}
+
+/* ── Layout ── */
+.container { max-width: 960px; margin: 0 auto; padding: 28px 20px; }
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+@media (max-width: 680px) { .two-col { grid-template-columns: 1fr; } }
+
+/* ── Section card ── */
+.section-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  box-shadow: var(--shadow);
+  margin-bottom: 20px;
+}
+.section-title {
+  font-family: 'Noto Serif JP', serif;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--teal);
+  margin-bottom: 16px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.section-title .icon {
+  width: 22px; height: 22px;
+  background: var(--teal-light);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px;
+  color: var(--teal);
+  flex-shrink: 0;
+}
+
+/* ── Form elements ── */
+.form-group { margin-bottom: 14px; }
+.form-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text2);
+  margin-bottom: 5px;
+  letter-spacing: 0.02em;
+}
+.form-input, .form-textarea, .form-select {
+  width: 100%;
+  padding: 9px 12px;
+  border: 1px solid var(--border2);
+  border-radius: var(--radius);
+  font-family: 'Noto Sans JP', sans-serif;
+  font-size: 13px;
+  color: var(--text);
+  background: var(--surface);
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.form-input:focus, .form-textarea:focus, .form-select:focus {
+  outline: none;
+  border-color: var(--teal-mid);
+  box-shadow: 0 0 0 3px rgba(13,122,95,0.10);
+}
+.form-textarea { resize: vertical; min-height: 80px; line-height: 1.6; }
+.form-select { appearance: none; cursor: pointer; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%239a948c' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; padding-right: 32px; }
+
+.input-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+@media (max-width: 480px) { .input-row { grid-template-columns: 1fr; } }
+
+/* ── Analyze button ── */
+.btn-analyze {
+  width: 100%;
+  padding: 14px;
+  background: linear-gradient(135deg, #0d7a5f, #0a5c47);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-lg);
+  font-family: 'Noto Sans JP', sans-serif;
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  letter-spacing: 0.04em;
+  transition: opacity 0.2s, transform 0.1s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 28px;
+}
+.btn-analyze:hover { opacity: 0.92; }
+.btn-analyze:active { transform: scale(0.99); }
+.btn-analyze:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn-icon { font-size: 18px; }
+
+/* ── Loading ── */
+.loading {
+  display: none;
+  text-align: center;
+  padding: 40px;
+  color: var(--text3);
+}
+.loading.active { display: block; }
+.spinner {
+  width: 36px; height: 36px;
+  border: 3px solid var(--border);
+  border-top-color: var(--teal);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin: 0 auto 16px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Results ── */
+.results { display: none; }
+.results.active { display: block; }
+
+.results-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.results-title {
+  font-family: 'Noto Serif JP', serif;
+  font-size: 18px;
+  font-weight: 600;
+}
+.summary-badges {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.badge {
+  padding: 4px 12px;
+  border-radius: 100px;
+  font-size: 12px;
+  font-weight: 500;
+}
+.badge-fulfilled { background: var(--green-light); color: var(--green); }
+.badge-partial { background: var(--amber-light); color: var(--amber); }
+.badge-unfulfilled { background: var(--red-light); color: var(--red); }
+.badge-unknown { background: var(--gray-light); color: var(--text3); }
+
+/* ── Item cards ── */
+.items-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.item-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow);
+  transition: box-shadow 0.2s;
+}
+.item-card:hover { box-shadow: var(--shadow-lg); }
+
+.item-header {
+  padding: 14px 18px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  user-select: none;
+}
+.item-number {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.status-fulfilled .item-number { background: var(--green-light); color: var(--green); }
+.status-partial .item-number { background: var(--amber-light); color: var(--amber); }
+.status-unfulfilled .item-number { background: var(--red-light); color: var(--red); }
+.status-unknown .item-number { background: var(--gray-light); color: var(--text3); }
+
+.item-title-wrap { flex: 1; }
+.item-need-title {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text);
+  line-height: 1.4;
+}
+.status-label {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 100px;
+  font-size: 11px;
+  font-weight: 500;
+  margin-top: 3px;
+}
+.status-fulfilled .status-label { background: var(--green-light); color: var(--green); }
+.status-partial .status-label { background: var(--amber-light); color: var(--amber); }
+.status-unfulfilled .status-label { background: var(--red-light); color: var(--red); }
+.status-unknown .status-label { background: var(--gray-light); color: var(--text3); }
+
+.item-chevron {
+  color: var(--text3);
+  font-size: 12px;
+  transition: transform 0.2s;
+}
+.item-card.open .item-chevron { transform: rotate(180deg); }
+
+/* Left border accent */
+.status-fulfilled { border-left: 4px solid #2a9a5c; }
+.status-partial { border-left: 4px solid #c97a1a; }
+.status-unfulfilled { border-left: 4px solid #c03a2a; }
+.status-unknown { border-left: 4px solid #cec9bf; }
+
+.item-body {
+  display: none;
+  padding: 0 18px 18px;
+  border-top: 1px solid var(--border);
+}
+.item-card.open .item-body { display: block; }
+
+.analysis-section { margin-top: 14px; }
+.analysis-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter---spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text3);
+  margin-bottom: 6px;
+}
+.analysis-text {
+  font-size: 13px;
+  color: var(--text2);
+  line-height: 1.8;
+}
+.evidence-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+.chip {
+  padding: 3px 10px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 100px;
+  font-size: 11px;
+  color: var(--text2);
+}
+
+/* ── Alert info box ── */
+.alert-box {
+  background: var(--amber-light);
+  border: 1px solid #f0c070;
+  border-radius: var(--radius);
+  padding: 12px 16px;
+  font-size: 12px;
+  color: #7a4a08;
+  margin-bottom: 20px;
+  line-height: 1.7;
+}
+
+/* ── Footer ── */
+.app-footer {
+  text-align: center;
+  padding: 24px;
+  color: var(--text3);
+  font-size: 12px;
+  border-top: 1px solid var(--border);
+  margin-top: 20px;
+}
+
+/* ── Tabs ── */
+.tabs { display: flex; gap: 0; border-bottom: 2px solid var(--border); margin-bottom: 20px; }
+.tab-btn {
+  padding: 10px 20px;
+  border: none;
+  background: none;
+  font-family: 'Noto Sans JP', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text3);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  transition: color 0.15s, border-color 0.15s;
+}
+.tab-btn.active { color: var(--teal); border-bottom-color: var(--teal); }
+.tab-pane { display: none; }
+.tab-pane.active { display: block; }
+</style>
+</head>
+<body>
+
+<header class="app-header">
+  <h1>ヘンダーソン 14項目 アセスメント支援ツール</h1>
+  <p>患者情報を入力するだけで、基本的欲求の充足状況をAIが分析します</p>
+</header>
+
+<!-- AI Settings Bar -->
+<div class="ai-settings-bar">
+  <label>使用するAI</label>
+  <select class="ai-select" id="aiProvider" onchange="onProviderChange()">
+    <option value="claude">Claude (Anthropic)</option>
+    <option value="gemini">Gemini 2.5 Flash (Google)</option>
+    <option value="openai">GPT-4o (OpenAI)</option>
+  </select>
+  <div class="ai-key-wrap">
+    <label>APIキー</label>
+    <input class="ai-key-input" id="apiKeyInput" type="password" placeholder="APIキーを入力してください" oninput="onKeyInput()">
+    <button class="ai-key-toggle" onclick="toggleKeyVisibility()">表示</button>
+  </div>
+  <button class="ai-test-btn" id="testBtn" onclick="testConnection()">接続テスト</button>
+  <span class="ai-status" id="aiStatus">キー未設定</span>
+</div>
+
+<div class="container">
+
+  <!-- Input form -->
+  <div id="inputSection">
+    <div class="section-card">
+      <div class="section-title">
+        <span class="icon">①</span>基本情報
+      </div>
+      <div class="input-row">
+        <div class="form-group">
+          <label class="form-label">年齢・性別</label>
+          <input class="form-input" id="age_sex" placeholder="例：72歳 女性" type="text">
+        </div>
+        <div class="form-group">
+          <label class="form-label">診断名・主疾患</label>
+          <input class="form-input" id="diagnosis" placeholder="例：2型糖尿病、右大腿骨頸部骨折" type="text">
+        </div>
+      </div>
+      <div class="input-row">
+        <div class="form-group">
+          <label class="form-label">入院目的・治療内容</label>
+          <input class="form-input" id="treatment" placeholder="例：血糖コントロール、手術後リハビリ" type="text">
+        </div>
+        <div class="form-group">
+          <label class="form-label">入院日数・術後日数など</label>
+          <input class="form-input" id="hospital_days" placeholder="例：術後3日目" type="text">
+        </div>
+      </div>
+    </div>
+
+    <div class="section-card">
+      <div class="section-title">
+        <span class="icon">②</span>入院前の生活状況
+      </div>
+      <div class="form-group">
+        <label class="form-label">ADL・日常生活の自立度</label>
+        <textarea class="form-textarea" id="pre_adl" placeholder="例：独居、買い物・炊事は自立。階段は手すりを使用。杖なし歩行可能。"></textarea>
+      </div>
+      <div class="two-col">
+        <div class="form-group">
+          <label class="form-label">食事・栄養・水分</label>
+          <textarea class="form-textarea" id="pre_nutrition" style="min-height:70px" placeholder="例：3食摂取、食欲良好。間食多い。水分は1日約1L。BMI 27。"></textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label">排泄状況</label>
+          <textarea class="form-textarea" id="pre_elimination" style="min-height:70px" placeholder="例：便秘傾向（3日に1回）、排尿自立、夜間1回トイレ。"></textarea>
+        </div>
+      </div>
+      <div class="two-col">
+        <div class="form-group">
+          <label class="form-label">睡眠・休息</label>
+          <textarea class="form-textarea" id="pre_sleep" style="min-height:70px" placeholder="例：7〜8時間。入眠困難はなし。疲れやすさを感じることがある。"></textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label">仕事・役割・趣味</label>
+          <textarea class="form-textarea" id="pre_role" style="min-height:70px" placeholder="例：主婦。家事全般担当。趣味は園芸。地域の老人会に参加。"></textarea>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">既往歴・服薬・その他特記事項</label>
+        <textarea class="form-textarea" id="pre_other" placeholder="例：高血圧（降圧剤内服中）、白内障術後。喫煙なし。飲酒なし。"></textarea>
+      </div>
+    </div>
+
+    <div class="section-card">
+      <div class="section-title">
+        <span class="icon">③</span>入院後の状態
+      </div>
+      <div class="two-col">
+        <div class="form-group">
+          <label class="form-label">バイタルサイン・検査データ</label>
+          <textarea class="form-textarea" id="vitals" placeholder="例：体温37.2℃、SpO2 95%（room air）、BP 148/90、HbA1c 8.4%、Hb 10.2g/dL"></textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label">呼吸・循環状態</label>
+          <textarea class="form-textarea" id="resp_circ" placeholder="例：呼吸数18回/分、咳嗽・痰なし、労作時に軽度息切れあり。"></textarea>
+        </div>
+      </div>
+      <div class="two-col">
+        <div class="form-group">
+          <label class="form-label">食事・栄養（入院後）</label>
+          <textarea class="form-textarea" id="post_nutrition" placeholder="例：術後流動食から粥食へ。摂取量6割程度。食欲低下。嚥下問題なし。"></textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label">排泄（入院後）</label>
+          <textarea class="form-textarea" id="post_elimination" placeholder="例：尿道カテーテル留置中。排便は術後2日目まで認めず。腹部膨満感あり。"></textarea>
+        </div>
+      </div>
+      <div class="two-col">
+        <div class="form-group">
+          <label class="form-label">運動・姿勢・安全</label>
+          <textarea class="form-textarea" id="mobility" placeholder="例：術後安静指示。端座位可能。歩行はリハビリ開始前。転倒リスク高い。"></textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label">睡眠・疼痛・不安</label>
+          <textarea class="form-textarea" id="post_sleep_pain" placeholder="例：術後疼痛NRS4/10。睡眠薬使用。夜間何度も目覚める。手術への不安を訴える。"></textarea>
+        </div>
+      </div>
+      <div class="two-col">
+        <div class="form-group">
+          <label class="form-label">清潔・皮膚状態</label>
+          <textarea class="form-textarea" id="hygiene" placeholder="例：清拭実施。仙骨部に発赤あり（ステージⅠ）。口腔ケア自立。義歯なし。"></textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label">コミュニケーション・精神状態</label>
+          <textarea class="form-textarea" id="communication" placeholder="例：意識清明。日本語のみ。家族に心配をかけたくないと話している。閉鎖的な印象。"></textarea>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">その他（信仰・社会的背景・家族サポートなど）</label>
+        <textarea class="form-textarea" id="other_info" placeholder="例：夫と2人暮らし。長女が週2回訪問。宗教的制限なし。経済的問題なし。"></textarea>
+      </div>
+    </div>
+
+    <button class="btn-analyze" id="analyzeBtn" onclick="runAnalysis()">
+      <span class="btn-icon">✦</span>
+      14項目の充足状況を分析する
+    </button>
+  </div>
+
+  <!-- Loading -->
+  <div class="loading" id="loading">
+    <div class="spinner"></div>
+    <p>ヘンダーソンの14項目を分析中...</p>
+    <p style="font-size:12px;color:var(--text3);margin-top:6px">患者情報をもとに充足・未充足を判定しています</p>
+  </div>
+
+  <!-- Results -->
+  <div class="results" id="results">
+    <div class="results-header">
+      <div class="results-title">アセスメント結果</div>
+      <div class="summary-badges" id="summaryBadges"></div>
+    </div>
+
+    <div class="alert-box">
+      ⚠️ このツールはアセスメント学習の補助を目的としています。AI による分析は入力情報に基づく参考値です。実際の看護記録・臨床判断は必ず指導者・担当看護師の確認のもとで行ってください。
+    </div>
+
+    <div class="items-grid" id="itemsGrid"></div>
+
+    <div style="text-align:center; margin-top: 24px;">
+      <button onclick="resetForm()" style="padding:10px 28px;background:none;border:1px solid var(--border2);border-radius:var(--radius);font-family:'Noto Sans JP',sans-serif;font-size:13px;color:var(--text2);cursor:pointer;">
+        ← 入力画面に戻る
+      </button>
+    </div>
+  </div>
+
+</div>
+
+<footer class="app-footer">
+  ヘンダーソン看護論 14の基本的欲求に基づくアセスメント支援ツール &nbsp;|&nbsp; 看護学習用
+</footer>
+
+<script>
+const NEED_TITLES = [
+  "正常に呼吸する",
+  "適切に飲食する",
+  "あらゆる排泄経路から排泄する",
+  "身体の位置を動かし、良い姿勢を保持する",
+  "睡眠と休息をとる",
+  "適切な衣類を選んで着脱する",
+  "体温を正常範囲に維持する",
+  "身体を清潔に保ち、身だしなみを整え、皮膚を保護する",
+  "環境の危険を避け、他者を傷つけない",
+  "コミュニケーションを通じて感情・ニーズ・不安・意見を伝える",
+  "自分の信仰に従い礼拝する",
+  "達成感をもたらすような仕事をする",
+  "遊びやレクリエーションに参加する",
+  "正常な発達と健康を導くような学習をし、好奇心を満足させる"
+];
+
+function collectInputs() {
+  return {
+    age_sex: document.getElementById('age_sex').value,
+    diagnosis: document.getElementById('diagnosis').value,
+    treatment: document.getElementById('treatment').value,
+    hospital_days: document.getElementById('hospital_days').value,
+    pre_adl: document.getElementById('pre_adl').value,
+    pre_nutrition: document.getElementById('pre_nutrition').value,
+    pre_elimination: document.getElementById('pre_elimination').value,
+    pre_sleep: document.getElementById('pre_sleep').value,
+    pre_role: document.getElementById('pre_role').value,
+    pre_other: document.getElementById('pre_other').value,
+    vitals: document.getElementById('vitals').value,
+    resp_circ: document.getElementById('resp_circ').value,
+    post_nutrition: document.getElementById('post_nutrition').value,
+    post_elimination: document.getElementById('post_elimination').value,
+    mobility: document.getElementById('mobility').value,
+    post_sleep_pain: document.getElementById('post_sleep_pain').value,
+    hygiene: document.getElementById('hygiene').value,
+    communication: document.getElementById('communication').value,
+    other_info: document.getElementById('other_info').value
+  };
+}
+
+// ── AI Provider state ──
+let keyVisible = false;
+
+function onProviderChange() {
+  const provider = document.getElementById('aiProvider').value;
+  const placeholders = {
+    claude: 'sk-ant-... (Anthropic APIキー)',
+    gemini: 'AIza... (Google AI Studio APIキー)',
+    openai: 'sk-... (OpenAI APIキー)'
+  };
+  document.getElementById('apiKeyInput').placeholder = placeholders[provider];
+  onKeyInput();
+}
+
+function onKeyInput() {
+  const key = document.getElementById('apiKeyInput').value.trim();
+  const status = document.getElementById('aiStatus');
+  if (!key) {
+    status.textContent = 'キー未設定';
+    status.className = 'ai-status';
+  } else {
+    status.textContent = 'キー設定済み ✓';
+    status.className = 'ai-status ok';
+  }
+}
+
+function toggleKeyVisibility() {
+  keyVisible = !keyVisible;
+  const input = document.getElementById('apiKeyInput');
+  input.type = keyVisible ? 'text' : 'password';
+  document.querySelector('.ai-key-toggle').textContent = keyVisible ? '隠す' : '表示';
+}
+
+async function testConnection() {
+  const apiKey = document.getElementById('apiKeyInput').value.trim();
+  const provider = document.getElementById('aiProvider').value;
+  const status = document.getElementById('aiStatus');
+  const btn = document.getElementById('testBtn');
+
+  if (!apiKey) {
+    status.textContent = 'キーを入力してください';
+    status.className = 'ai-status error';
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'テスト中...';
+  status.textContent = '接続確認中...';
+  status.className = 'ai-status';
+
+  const testPrompt = 'こんにちは。「OK」とだけ返答してください。';
+
+  try {
+    if (provider === 'claude') {
+      const r = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': apiKey,
+          'anthropic-version': '2023-06-01',
+          'anthropic-dangerous-direct-browser-access': 'true'
+        },
+        body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 10, messages: [{ role: 'user', content: testPrompt }] })
+      });
+      if (!r.ok) { const e = await r.json().catch(()=>({})); throw new Error(r.status + ': ' + (e.error?.message || r.statusText)); }
+      await r.json();
+    } else if (provider === 'gemini') {
+      const r = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=' + apiKey, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contents: [{ parts: [{ text: testPrompt }] }], generationConfig: { maxOutputTokens: 50, temperature: 1 } })
+      });
+      if (!r.ok) { const e = await r.json().catch(()=>({})); throw new Error(r.status + ': ' + (e.error?.message || r.statusText)); }
+      await r.json();
+    } else if (provider === 'openai') {
+      const r = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + apiKey },
+        body: JSON.stringify({ model: 'gpt-4o-mini', max_tokens: 10, messages: [{ role: 'user', content: testPrompt }] })
+      });
+      if (!r.ok) { const e = await r.json().catch(()=>({})); throw new Error(r.status + ': ' + (e.error?.message || r.statusText)); }
+      await r.json();
+    }
+
+    const names = { claude: 'Claude', gemini: 'Gemini 2.5 Flash', openai: 'GPT-4o' };
+    status.textContent = names[provider] + ' 接続成功 ✓';
+    status.className = 'ai-status ok';
+  } catch (e) {
+    const msg = e.message || String(e);
+    let label = '接続失敗';
+    if (msg.includes('401') || msg.includes('API key') || msg.includes('invalid')) label = 'キーが無効';
+    else if (msg.includes('403')) label = '権限エラー';
+    else if (msg.includes('429')) label = '制限超過';
+    else if (msg.includes('Failed to fetch') || msg.includes('NetworkError')) label = 'ネットワークエラー';
+    status.textContent = label + ' ✗  (' + msg.slice(0, 60) + ')';
+    status.className = 'ai-status error';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '接続テスト';
+  }
+}
+
+async function runAnalysis() {
+  const inputs = collectInputs();
+  const hasData = Object.values(inputs).some(v => v.trim() !== '');
+  if (!hasData) { alert('患者情報を入力してください。'); return; }
+
+  const apiKey = document.getElementById('apiKeyInput').value.trim();
+  const provider = document.getElementById('aiProvider').value;
+
+  if (!apiKey) {
+    alert('APIキーを設定してください。\n\n画面上部の「APIキー」欄に入力してください。');
+    return;
+  }
+
+  document.getElementById('analyzeBtn').disabled = true;
+  document.getElementById('loading').classList.add('active');
+  document.getElementById('results').classList.remove('active');
+
+  const prompt = buildPrompt(inputs);
+
+  try {
+    let parsed;
+    if (provider === 'claude') {
+      parsed = await callClaude(apiKey, prompt);
+    } else if (provider === 'gemini') {
+      parsed = await callGemini(apiKey, prompt);
+    } else if (provider === 'openai') {
+      parsed = await callOpenAI(apiKey, prompt);
+    }
+    renderResults(parsed);
+  } catch (e) {
+    const errMsg = e.message || String(e);
+    let hint = '';
+    if (errMsg.includes('401') || errMsg.includes('invalid') || errMsg.includes('API key')) {
+      hint = '\n\n→ APIキーが正しいか確認してください。';
+    } else if (errMsg.includes('403')) {
+      hint = '\n\n→ APIキーの権限またはプランを確認してください。';
+    } else if (errMsg.includes('429')) {
+      hint = '\n\n→ APIの使用制限に達しました。しばらく待ってから再試行してください。';
+    }
+    alert('分析中にエラーが発生しました。\n' + errMsg + hint);
+    document.getElementById('analyzeBtn').disabled = false;
+    document.getElementById('loading').classList.remove('active');
+  }
+}
+
+// ── Claude API ──
+async function callClaude(apiKey, prompt) {
+  const response = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-api-key": apiKey,
+      "anthropic-version": "2023-06-01",
+      "anthropic-dangerous-direct-browser-access": "true"
+    },
+    body: JSON.stringify({
+      model: "claude-sonnet-4-20250514",
+      max_tokens: 8000,
+      messages: [{ role: "user", content: prompt }]
+    })
+  });
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(`Claude API エラー ${response.status}: ${err.error?.message || response.statusText}`);
+  }
+  const data = await response.json();
+  const text = data.content.map(b => b.text || '').join('');
+  return parseJSON(text);
+}
+
+// ── Gemini API ──
+async function callGemini(apiKey, prompt) {
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+  const response = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      contents: [{ parts: [{ text: prompt }] }],
+      generationConfig: {
+        maxOutputTokens: 8192,
+        temperature: 1,
+        responseMimeType: "application/json"
+      }
+    })
+  });
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(`Gemini API エラー ${response.status}: ${err.error?.message || response.statusText}`);
+  }
+  const data = await response.json();
+  // Gemini 2.5 thinking: parts may include thought blocks — collect only text parts
+  const parts = data.candidates?.[0]?.content?.parts || [];
+  const text = parts.filter(p => p.text && !p.thought).map(p => p.text).join('');
+  if (!text) {
+    // デバッグ用: 実際のレスポンス構造をエラーに含める
+    throw new Error('Gemini応答テキストなし。構造: ' + JSON.stringify(data).slice(0, 500));
+  }
+  return parseJSON(text);
+}
+
+// ── OpenAI API ──
+async function callOpenAI(apiKey, prompt) {
+  const response = await fetch("https://api.openai.com/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${apiKey}`
+    },
+    body: JSON.stringify({
+      model: "gpt-4o",
+      max_tokens: 8000,
+      temperature: 0.3,
+      messages: [{ role: "user", content: prompt }]
+    })
+  });
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(`OpenAI API エラー ${response.status}: ${err.error?.message || response.statusText}`);
+  }
+  const data = await response.json();
+  const text = data.choices?.[0]?.message?.content || '';
+  return parseJSON(text);
+}
+
+// ── JSON parser ──
+function parseJSON(text) {
+  const clean = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+  try {
+    return JSON.parse(clean);
+  } catch (e) {
+    const match = clean.match(/\{[\s\S]*\}/);
+    if (match) return JSON.parse(match[0]);
+    throw new Error('AIからの応答をJSONとして解析できませんでした。\n' + clean.slice(0, 200));
+  }
+}
+
+function buildPrompt(d) {
+  return `あなたはヘンダーソンの看護論に精通した看護教育の専門家です。
+以下の患者情報をもとに、ヘンダーソンの14の基本的欲求それぞれについて充足状況を分析してください。
+
+## 患者情報
+
+【基本情報】
+- 年齢・性別：${d.age_sex}
+- 診断名・主疾患：${d.diagnosis}
+- 入院目的・治療：${d.treatment}
+- 現在の状況：${d.hospital_days}
+
+【入院前の生活状況】
+- ADL・日常生活：${d.pre_adl}
+- 食事・栄養・水分：${d.pre_nutrition}
+- 排泄：${d.pre_elimination}
+- 睡眠・休息：${d.pre_sleep}
+- 仕事・役割・趣味：${d.pre_role}
+- 既往歴・服薬・その他：${d.pre_other}
+
+【入院後の状態】
+- バイタル・検査データ：${d.vitals}
+- 呼吸・循環：${d.resp_circ}
+- 食事・栄養：${d.post_nutrition}
+- 排泄：${d.post_elimination}
+- 運動・姿勢・安全：${d.mobility}
+- 睡眠・疼痛・不安：${d.post_sleep_pain}
+- 清潔・皮膚：${d.hygiene}
+- コミュニケーション・精神：${d.communication}
+- その他：${d.other_info}
+
+## 指示
+ヘンダーソンの14の基本的欲求それぞれについてstatusを判定し、以下のJSON形式で回答してください。
+各項目の分析は看護学生が理解しやすい平易な日本語で書いてください。
+
+【重要・出力量の削減ルール】
+- status が "fulfilled"（充足）または "unknown"（情報不足）の項目は、summary のみ返してください。assessment・evidence・nursing_points は空文字または空配列にしてください。
+- status が "unfulfilled"（未充足）または "partial"（部分充足）の項目のみ、assessment・evidence・nursing_pointsを詳しく記述してください。
+
+以下のJSONのみを返してください（コードブロックなし、前置き・後置きなし）：
+
+{
+  "items": [
+    {
+      "id": 1,
+      "title": "正常に呼吸する",
+      "status": "fulfilled | partial | unfulfilled | unknown",
+      "summary": "30字以内の一言判定理由（全項目必須）",
+      "assessment": "未充足・部分充足のみ：充足状況の詳細根拠（3〜4文）。それ以外は空文字",
+      "evidence": ["未充足・部分充足のみ：根拠データ（3〜4個）。それ以外は空配列"],
+      "nursing_points": "未充足・部分充足のみ：観察・介入のポイント（2文）。それ以外は空文字"
+    },
+    ... (14項目すべて)
+  ]
+}
+
+statusの基準：
+- fulfilled：基本的欲求が現在満たされている
+- partial：部分的に満たされているが課題あり、または入院前は充足していたが現在は変化あり
+- unfulfilled：明らかに充足されていない、または緊急性の高い問題あり
+- unknown：情報不足で判断困難`;
+}
+
+function renderResults(data) {
+  document.getElementById('loading').classList.remove('active');
+  document.getElementById('results').classList.add('active');
+
+  const items = data.items || [];
+  const statusLabel = { fulfilled: '充足', partial: '部分充足', unfulfilled: '未充足', unknown: '情報不足' };
+  const needsDetail = s => s === 'unfulfilled' || s === 'partial';
+
+  // Summary badges
+  const counts = { fulfilled: 0, partial: 0, unfulfilled: 0, unknown: 0 };
+  items.forEach(it => { if (counts[it.status] !== undefined) counts[it.status]++; });
+  document.getElementById('summaryBadges').innerHTML = Object.entries(counts)
+    .filter(([, v]) => v > 0)
+    .map(([k, v]) => `<span class="badge badge-${k}">${statusLabel[k]} ${v}</span>`)
+    .join('');
+
+  // Separate into problem items and ok items
+  const problemItems = items.filter(it => needsDetail(it.status));
+  const okItems = items.filter(it => !needsDetail(it.status));
+
+  let html = '';
+
+  // ── Problem items (unfulfilled / partial) – full detail cards
+  if (problemItems.length > 0) {
+    html += `<div class="results-section-label">要注意項目（未充足・部分充足）</div>`;
+    html += problemItems.map((item, i) => {
+      const idx = 'p' + i;
+      const evidenceChips = (item.evidence || []).map(e => `<span class="chip">${e}</span>`).join('');
+      return `
+        <div class="item-card status-${item.status} open" id="card-${idx}">
+          <div class="item-header" onclick="toggleCard('${idx}')">
+            <div class="item-number">${item.id}</div>
+            <div class="item-title-wrap">
+              <div class="item-need-title">${item.title}</div>
+              <span class="status-label">${statusLabel[item.status]}　${item.summary || ''}</span>
+            </div>
+            <span class="item-chevron">▼</span>
+          </div>
+          <div class="item-body">
+            ${item.assessment ? `<div class="analysis-section">
+              <div class="analysis-label">アセスメント</div>
+              <div class="analysis-text">${item.assessment}</div>
+            </div>` : ''}
+            ${evidenceChips ? `<div class="analysis-section">
+              <div class="analysis-label">根拠となる情報</div>
+              <div class="evidence-chips">${evidenceChips}</div>
+            </div>` : ''}
+            ${item.nursing_points ? `<div class="analysis-section" style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border);">
+              <div class="analysis-label">看護のポイント</div>
+              <div class="analysis-text" style="color:var(--teal);">${item.nursing_points}</div>
+            </div>` : ''}
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  // ── OK items (fulfilled / unknown) – compact inline list
+  if (okItems.length > 0) {
+    html += `<div class="results-section-label" style="margin-top:24px;">充足・情報不足項目</div>`;
+    html += `<div class="ok-items-list">` +
+      okItems.map(item => `
+        <div class="ok-item status-${item.status}">
+          <span class="ok-num">${item.id}</span>
+          <span class="ok-title">${item.title}</span>
+          <span class="ok-status-label badge badge-${item.status}">${statusLabel[item.status]}</span>
+          <span class="ok-summary">${item.summary || ''}</span>
+        </div>`).join('') +
+      `</div>`;
+  }
+
+  document.getElementById('itemsGrid').innerHTML = html;
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function toggleCard(idx) {
+  document.getElementById(`card-${idx}`).classList.toggle('open');
+}
+
+function resetForm() {
+  document.getElementById('results').classList.remove('active');
+  document.getElementById('analyzeBtn').disabled = false;
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+</script>
+</body>
+</html>
